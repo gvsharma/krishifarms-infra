@@ -69,7 +69,7 @@ module "ci_backend_deploy" {
 }
 
 module "github_backend_deploy_config" {
-  count  = var.enable_backend_ssm_deploy && var.github_token != null ? 1 : 0
+  count  = var.enable_backend_ssm_deploy && local.github_token_configured ? 1 : 0
   source = "../../modules/github-backend-deploy-config"
 
   repository      = var.github_backend_repository

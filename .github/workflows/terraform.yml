@@ -55,8 +55,6 @@ jobs:
   plan:
     name: Plan (dev)
     runs-on: ubuntu-latest
-    env:
-      TF_VAR_github_token: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
     permissions:
       id-token: write
       contents: read
@@ -68,6 +66,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Configure optional GitHub token for Terraform
+        env:
+          KRISHIFARMS_GH_TOKEN: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
+        run: |
+          if [ -n "${KRISHIFARMS_GH_TOKEN}" ]; then
+            echo "TF_VAR_github_token=${KRISHIFARMS_GH_TOKEN}" >> "$GITHUB_ENV"
+          else
+            echo "KRISHIFARMS_GH_TOKEN not set — Terraform will skip GitHub deploy config sync."
+          fi
 
       - name: Cache Terraform plugins
         uses: actions/cache@v4
@@ -155,8 +163,6 @@ jobs:
       )
     runs-on: ubuntu-latest
     environment: development
-    env:
-      TF_VAR_github_token: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
     permissions:
       id-token: write
       contents: read
@@ -168,6 +174,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Configure optional GitHub token for Terraform
+        env:
+          KRISHIFARMS_GH_TOKEN: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
+        run: |
+          if [ -n "${KRISHIFARMS_GH_TOKEN}" ]; then
+            echo "TF_VAR_github_token=${KRISHIFARMS_GH_TOKEN}" >> "$GITHUB_ENV"
+          else
+            echo "KRISHIFARMS_GH_TOKEN not set — Terraform will skip GitHub deploy config sync."
+          fi
 
       - name: Cache Terraform plugins
         uses: actions/cache@v4
@@ -230,13 +246,13 @@ jobs:
             exit 0
           fi
           {
-            echo "### Backend deploy — update gvsharma/krishifarms-crm Actions config"
+            echo "### Backend deploy — update gvsharma/krishifarms-backend Actions config"
             echo ""
             MANAGED="$(echo "$SETUP" | jq -r '.terraform_managed_github_config')"
             if [[ "$MANAGED" == "true" ]]; then
-              echo "GitHub Actions deploy config on \`gvsharma/krishifarms-crm\` was updated by Terraform."
+              echo "GitHub Actions deploy config on \`gvsharma/krishifarms-backend\` was updated by Terraform."
             else
-              echo "Set secret \`KRISHIFARMS_GH_TOKEN\` on this repo (PAT with \`repo\` on krishifarms-crm) or copy values below manually."
+              echo "Set secret \`KRISHIFARMS_GH_TOKEN\` on this repo (PAT with \`repo\` on krishifarms-backend) or copy values below manually."
             fi
             echo ""
             echo "| Setting | Value |"
@@ -250,7 +266,7 @@ jobs:
             echo "Shared EC2: Gamya :8080, KrishiFarms prod :8081, KrishiFarms dev :8082"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Sync backend deploy config to krishifarms-crm (gh CLI fallback)
+      - name: Sync backend deploy config to krishifarms-backend (gh CLI fallback)
         if: success()
         env:
           GH_TOKEN: ${{ secrets.KRISHIFARMS_GH_TOKEN }}

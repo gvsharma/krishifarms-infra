@@ -54,7 +54,7 @@ variable "github_backend_repository" {
 
 variable "github_token" {
   type        = string
-  description = "GitHub PAT with repo scope on github_backend_repository for Terraform-managed Actions config."
+  description = "GitHub PAT with repo scope on github_backend_repository for Terraform-managed Actions config. Null or empty skips github_backend_deploy_config."
   sensitive   = true
   default     = null
 }

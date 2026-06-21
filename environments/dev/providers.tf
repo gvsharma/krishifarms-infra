@@ -27,5 +27,5 @@ provider "aws" {
 
 provider "github" {
   owner = split("/", var.github_backend_repository)[0]
-  token = var.github_token
+  token = local.github_token_configured ? var.github_token : null
 }
