@@ -1,3 +1,13 @@
 aws_region         = "ap-south-1"
+project            = "krishifarms"
 state_bucket_name  = "krishifarms-terraform-state"
 lock_table_name    = "terraform-locks"
+enable_iam_policy  = true
+
+# Same AWS account as Gamya Couture (085863558134)
+aws_account_id                     = "085863558134"
+enable_github_actions              = true
+github_repository                  = "gvsharma/krishifarms-infra"
+github_terraform_role_name         = "KrishiFarmsGitHubTerraformRole"
+create_github_oidc_provider        = false
+github_attach_administrator_access = true

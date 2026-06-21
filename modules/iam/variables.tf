@@ -59,3 +59,9 @@ variable "cloudwatch_log_group_arns" {
   default     = []
   description = "Log group ARNs the EC2 role may write to."
 }
+
+variable "additional_iam_policy_arns" {
+  type        = list(string)
+  default     = []
+  description = "Extra managed policies to attach to the EC2 role (e.g. backend-deploy S3 read)."
+}

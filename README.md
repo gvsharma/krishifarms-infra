@@ -82,4 +82,4 @@ sudo SHARED_EC2=true API_DOMAIN=api.krishifarms.in \
 /opt/krishifarms/scripts/compose-up.sh prod
 ```
 
-See [docs/SHARED_EC2.md](docs/SHARED_EC2.md), [docs/EC2_IMPORT.md](docs/EC2_IMPORT.md), and [docs/RUNBOOK.md](docs/RUNBOOK.md).
+See [docs/GITHUB_ACTIONS.md](docs/GITHUB_ACTIONS.md) and [docs/SHARED_EC2.md](docs/SHARED_EC2.md).

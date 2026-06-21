@@ -1,21 +1,27 @@
-terraform {
-  required_version = ">= 1.9.0"
+module "github_terraform" {
+  source = "../modules/ci-terraform-iam"
 
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.0"
-    }
+  aws_account_id              = var.aws_account_id
+  github_repository           = var.github_repository
+  role_name                   = var.role_name
+  create_oidc_provider        = var.create_oidc_provider
+  attach_administrator_access = var.attach_administrator_access
+
+  oidc_subjects = [
+    "repo:${var.github_repository}:*",
+  ]
+
+  tags = {
+    Project     = "krishifarms"
+    ManagedBy   = "terraform"
+    Environment = "bootstrap"
+    Purpose     = "github-actions-terraform-dev"
   }
 }
 
-provider "aws" {
-  region = var.aws_region
-}
-
-variable "aws_region" {
+variable "aws_account_id" {
   type    = string
-  default = "ap-south-1"
+  default = "085863558134"
 }
 
 variable "github_repository" {
@@ -23,46 +29,29 @@ variable "github_repository" {
   default = "gvsharma/krishifarms-infra"
 }
 
-resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03fa02154a50987747b006a2daa"]
+variable "role_name" {
+  type    = string
+  default = "KrishiFarmsGitHubTerraformRole"
 }
 
-data "aws_iam_policy_document" "assume" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    principals {
-      type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
-    }
-    condition {
-      test     = "StringLike"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:*"]
-    }
-  }
+variable "create_oidc_provider" {
+  type    = bool
+  default = false
 }
 
-resource "aws_iam_role" "terraform_ci" {
-  name_prefix        = "krishifarms-github-"
-  assume_role_policy = data.aws_iam_policy_document.assume.json
+variable "attach_administrator_access" {
+  type    = bool
+  default = true
 }
 
-resource "aws_iam_role_policy_attachment" "admin" {
-  role       = aws_iam_role.terraform_ci.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
-}
-
-output "oidc_provider_arn" {
-  value = aws_iam_openid_connect_provider.github.arn
+provider "aws" {
+  region = "ap-south-1"
 }
 
 output "terraform_ci_role_arn" {
-  value = aws_iam_role.terraform_ci.arn
+  value = module.github_terraform.role_arn
+}
+
+output "oidc_provider_arn" {
+  value = module.github_terraform.oidc_provider_arn
 }

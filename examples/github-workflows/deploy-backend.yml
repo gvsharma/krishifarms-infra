@@ -1,0 +1,113 @@
+# Copy this file to gvsharma/krishifarms-crm/.github/workflows/deploy.yml
+# Requires secrets/vars set by krishifarms-infra Terraform (see docs/GITHUB_ACTIONS.md)
+
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [dev, qa, prod]
+        default: dev
+      image_tag:
+        type: string
+        default: latest
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: gvsharma/krishifarms-crm
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        run: echo "version=${{ github.event.inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    env:
+      DEPLOY_ENV: ${{ github.event.inputs.environment || 'dev' }}
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      DEPLOY_BUCKET: ${{ vars.DEPLOY_BUCKET }}
+      HEALTH_CHECK_URL: ${{ vars.HEALTH_CHECK_URL || 'http://127.0.0.1:8081/health' }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_BACKEND_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload deploy metadata to S3
+        run: |
+          cat > deploy.env <<EOF
+          IMAGE_TAG=${{ needs.build.outputs.image_tag }}
+          API_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image_tag }}
+          ENVIRONMENT=${DEPLOY_ENV}
+          EOF
+          aws s3 cp deploy.env "s3://${DEPLOY_BUCKET}/incoming/krishifarms-deploy.env"
+
+      - name: SSM deploy on shared EC2
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${EC2_INSTANCE_ID}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "KrishiFarms deploy ${{ needs.build.outputs.image_tag }}" \
+            --parameters commands=[
+              "aws s3 cp s3://${DEPLOY_BUCKET}/incoming/krishifarms-deploy.env /tmp/krishifarms-deploy.env",
+              "set -a && source /tmp/krishifarms-deploy.env && set +a",
+              "export BACKUP_BUCKET=${{ vars.BACKUPS_BUCKET || vars.DEPLOY_BUCKET }}",
+              "/opt/krishifarms/scripts/deploy.sh ${IMAGE_TAG}"
+            ] \
+            --query Command.CommandId --output text)
+
+          for i in $(seq 1 30); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${EC2_INSTANCE_ID}" \
+              --query Status --output text)
+            echo "SSM status: $STATUS"
+            [[ "$STATUS" == "Success" ]] && exit 0
+            [[ "$STATUS" == "Failed" || "$STATUS" == "Cancelled" ]] && break
+            sleep 10
+          done
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "${EC2_INSTANCE_ID}"
+          exit 1
+
+      - name: External health check
+        run: curl -sf "${HEALTH_CHECK_URL}"

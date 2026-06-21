@@ -1,23 +1,37 @@
-name: Terraform (dev)
+# ------------------------------------------------------------------------------
+# Terraform CI/CD — krishifarms-infra (DEV ONLY)
+#
+# Pull request → main     : fmt, init, validate, plan (no apply)
+# Push → main             : fmt, init, validate, plan, then apply -auto-approve
+# Manual (workflow_dispatch): plan; optional apply with development environment approval
+#
+# Authentication: GitHub OIDC → AWS IAM role
+# Region: ap-south-1
+# Working directory: environments/dev
+# Account: 085863558134 (same as Gamya Couture)
+# ------------------------------------------------------------------------------
+
+name: Terraform
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - "**/*.tf"
-      - "**/*.tfvars"
+      - "**.tf"
+      - "**.tfvars"
       - ".github/workflows/terraform.yml"
   push:
     branches: [main]
     paths:
-      - "**/*.tf"
-      - "**/*.tfvars"
+      - "**.tf"
+      - "**.tfvars"
       - ".github/workflows/terraform.yml"
   workflow_dispatch:
     inputs:
       apply:
-        description: Run terraform apply after plan
+        description: Run terraform apply after plan (requires development environment approval)
         type: boolean
+        required: true
         default: false
 
 permissions:
@@ -29,8 +43,9 @@ env:
   AWS_REGION: ap-south-1
   TF_IN_AUTOMATION: true
   TF_INPUT: false
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform-plugin-cache
   WORKING_DIR: environments/dev
-  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_ARN || secrets.AWS_ROLE_ARN }}
+  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_ARN || secrets.AWS_ROLE_ARN || 'arn:aws:iam::085863558134:role/KrishiFarmsGitHubTerraformRole' }}
 
 concurrency:
   group: terraform-dev-${{ github.ref }}
@@ -40,38 +55,94 @@ jobs:
   plan:
     name: Plan (dev)
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_github_token: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
+    permissions:
+      id-token: write
+      contents: read
+
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TF_PLUGIN_CACHE_DIR }}
+            ${{ env.WORKING_DIR }}/.terraform
+          key: terraform-${{ runner.os }}-${{ env.TF_VERSION }}-${{ hashFiles('**/.terraform.lock.hcl', '**/providers.tf') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-${{ env.TF_VERSION }}-
+
+      - name: Prepare Terraform plugin cache dir
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions-terraform-dev-plan-${{ github.run_id }}
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
-      - run: terraform fmt -check -recursive
+      - name: Terraform fmt (check)
+        run: terraform fmt -check -recursive
         working-directory: .
 
-      - run: terraform init -input=false
+      - name: Terraform init
+        run: terraform init -input=false
 
-      - run: terraform validate
+      - name: Terraform validate
+        run: terraform validate
 
-      - run: terraform plan -no-color -lock-timeout=10m -var-file=ci.tfvars -out=tfplan | tee plan.txt
+      - name: Terraform plan
+        run: |
+          set -o pipefail
+          terraform plan -no-color -lock-timeout=10m -var-file=ci.tfvars -out=tfplan | tee plan.txt
 
-      - uses: actions/upload-artifact@v4
+      - name: Publish plan to job summary
+        if: always()
+        run: |
+          if [ -f plan.txt ]; then
+            {
+              echo "### Terraform plan — dev (krishifarms-dev)"
+              echo ""
+              echo '```hcl'
+              head -c 60000 plan.txt
+              echo '```'
+              echo ""
+              echo "### Apply"
+              if [ "${{ github.event_name }}" = "pull_request" ]; then
+                echo "Apply is **skipped** on pull requests. To deploy:"
+                echo "1. **Actions → Terraform → Run workflow**"
+                echo "2. Select this branch, set **apply = true**, run"
+                echo "3. Approve the **development** environment when prompted"
+                echo ""
+                echo "Or merge to \`main\` for automatic apply on push."
+              elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.apply }}" != "true" ]; then
+                echo "Re-run workflow with **apply = true** to deploy (requires environment approval)."
+              fi
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload plan artifact
         if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: tfplan-dev-${{ github.run_id }}
           path: |
-            environments/dev/tfplan
-            environments/dev/plan.txt
+            ${{ env.WORKING_DIR }}/tfplan
+            ${{ env.WORKING_DIR }}/plan.txt
           retention-days: 14
 
   apply:
@@ -84,27 +155,113 @@ jobs:
       )
     runs-on: ubuntu-latest
     environment: development
+    env:
+      TF_VAR_github_token: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
+    permissions:
+      id-token: write
+      contents: read
+
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIR }}
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TF_PLUGIN_CACHE_DIR }}
+            ${{ env.WORKING_DIR }}/.terraform
+          key: terraform-${{ runner.os }}-${{ env.TF_VERSION }}-${{ hashFiles('**/.terraform.lock.hcl', '**/providers.tf') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-${{ env.TF_VERSION }}-
+
+      - name: Prepare Terraform plugin cache dir
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
         with:
           name: tfplan-dev-${{ github.run_id }}
           path: ${{ github.workspace }}/environments/dev
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions-terraform-dev-apply-${{ github.run_id }}
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
-      - run: terraform init -input=false
+      - name: Terraform init
+        run: terraform init -input=false
 
-      - run: terraform apply -no-color -lock-timeout=10m -auto-approve tfplan
+      - name: Terraform apply
+        run: |
+          set -euo pipefail
+          apply_log="$(mktemp)"
+          if terraform apply -no-color -lock-timeout=10m -auto-approve tfplan >"$apply_log" 2>&1; then
+            cat "$apply_log"
+            exit 0
+          fi
+          cat "$apply_log"
+          if grep -q 'Saved plan is stale' "$apply_log"; then
+            echo "Saved plan is stale — regenerating plan and applying..."
+            terraform plan -no-color -lock-timeout=10m -var-file=ci.tfvars -out=tfplan
+            terraform apply -no-color -lock-timeout=10m -auto-approve tfplan
+          else
+            exit 1
+          fi
+
+      - name: Publish backend deploy GitHub config
+        if: success()
+        run: |
+          SETUP="$(terraform output -json backend_deploy_github_setup)"
+          if [[ "$SETUP" == "null" ]]; then
+            echo "SSM backend deploy disabled — skipping GitHub config summary."
+            exit 0
+          fi
+          {
+            echo "### Backend deploy — update gvsharma/krishifarms-crm Actions config"
+            echo ""
+            MANAGED="$(echo "$SETUP" | jq -r '.terraform_managed_github_config')"
+            if [[ "$MANAGED" == "true" ]]; then
+              echo "GitHub Actions deploy config on \`gvsharma/krishifarms-crm\` was updated by Terraform."
+            else
+              echo "Set secret \`KRISHIFARMS_GH_TOKEN\` on this repo (PAT with \`repo\` on krishifarms-crm) or copy values below manually."
+            fi
+            echo ""
+            echo "| Setting | Value |"
+            echo "|---------|-------|"
+            echo "| Secret \`AWS_BACKEND_DEPLOY_ROLE_ARN\` | \`$(echo "$SETUP" | jq -r '.secret_AWS_BACKEND_DEPLOY_ROLE_ARN')\` |"
+            echo "| Variable \`DEPLOY_BUCKET\` | \`$(echo "$SETUP" | jq -r '.variable_DEPLOY_BUCKET')\` |"
+            echo "| Variable \`EC2_INSTANCE_ID\` | \`$(echo "$SETUP" | jq -r '.variable_EC2_INSTANCE_ID')\` |"
+            echo "| Variable \`EC2_HOST\` | \`$(echo "$SETUP" | jq -r '.variable_EC2_HOST')\` |"
+            echo "| Variable \`HEALTH_CHECK_URL\` | \`$(echo "$SETUP" | jq -r '.variable_HEALTH_CHECK_URL')\` |"
+            echo ""
+            echo "Shared EC2: Gamya :8080, KrishiFarms prod :8081, KrishiFarms dev :8082"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sync backend deploy config to krishifarms-crm (gh CLI fallback)
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.KRISHIFARMS_GH_TOKEN }}
+        run: |
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "No KRISHIFARMS_GH_TOKEN — skipping gh CLI sync."
+            exit 0
+          fi
+          MANAGED="$(terraform output -json backend_deploy_github_setup | jq -r '.terraform_managed_github_config')"
+          if [[ "$MANAGED" == "true" ]]; then
+            echo "GitHub deploy config already managed by Terraform."
+            exit 0
+          fi
+          bash ../../scripts/sync-backend-deploy-github-config.sh
