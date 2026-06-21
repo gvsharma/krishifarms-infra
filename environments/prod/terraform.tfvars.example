@@ -1,0 +1,10 @@
+aws_region                 = "ap-south-1"
+domain_name                = "krishifarms.in"
+existing_ec2_instance_id   = "i-0123456789abcdef0"
+existing_ec2_public_ip       = "203.0.113.10"
+vpc_id                     = "vpc-0123456789abcdef0"
+enable_custom_domain       = true
+enable_ssh                 = false
+github_infra_repository    = "gvsharma/krishifarms-infra"
+github_backend_repository  = "gvsharma/krishifarms-crm"
+create_github_oidc_provider = false

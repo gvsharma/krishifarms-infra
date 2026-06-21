@@ -1,0 +1,21 @@
+services:
+  api:
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+
+  postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2048M
+
+  nginx:
+    ports:
+      - "127.0.0.1:8080:80"

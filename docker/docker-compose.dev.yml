@@ -1,0 +1,10 @@
+services:
+  api:
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+    ports: []  # no direct exposure in dev remote; use nginx
+
+  nginx:
+    ports:
+      - "127.0.0.1:8080:80"

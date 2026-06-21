@@ -1,0 +1,110 @@
+name: Terraform (dev)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Run terraform apply after plan
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+  AWS_REGION: ap-south-1
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
+  WORKING_DIR: environments/dev
+  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_ARN || secrets.AWS_ROLE_ARN }}
+
+concurrency:
+  group: terraform-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Plan (dev)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - run: terraform fmt -check -recursive
+        working-directory: .
+
+      - run: terraform init -input=false
+
+      - run: terraform validate
+
+      - run: terraform plan -no-color -lock-timeout=10m -var-file=ci.tfvars -out=tfplan | tee plan.txt
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: tfplan-dev-${{ github.run_id }}
+          path: |
+            environments/dev/tfplan
+            environments/dev/plan.txt
+          retention-days: 14
+
+  apply:
+    name: Apply (dev)
+    needs: plan
+    if: |
+      needs.plan.result == 'success' && (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' && inputs.apply == true)
+      )
+    runs-on: ubuntu-latest
+    environment: development
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfplan-dev-${{ github.run_id }}
+          path: ${{ github.workspace }}/environments/dev
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - run: terraform init -input=false
+
+      - run: terraform apply -no-color -lock-timeout=10m -auto-approve tfplan

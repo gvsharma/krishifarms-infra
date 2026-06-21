@@ -1,0 +1,9 @@
+services:
+  api:
+    environment:
+      APP_ENV: qa
+      DEBUG: "false"
+
+  nginx:
+    ports:
+      - "127.0.0.1:8081:80"

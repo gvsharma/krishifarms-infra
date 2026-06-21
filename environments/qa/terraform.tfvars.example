@@ -1,0 +1,4 @@
+domain_name                = "krishifarms.in"
+existing_ec2_instance_id   = "i-qa-example"
+existing_ec2_public_ip     = "203.0.113.30"
+vpc_id                     = "vpc-qa-example"
