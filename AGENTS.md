@@ -273,7 +273,7 @@ Cursor rule `.cursor/rules/documentation-maintenance.mdc` enforces this.
 | Repo scaffold + modules | Done (branch `feat/initial-infra-implementation`) |
 | Shared EC2 design | Done |
 | CI/CD workflows (Gamya pattern) | Done |
-| Bootstrap apply in AWS | **Not run** — state bucket may not exist yet |
+| Bootstrap apply in AWS | **Done** — S3 `krishifarms-terraform-state`, DynamoDB `terraform-locks`, role `KrishiFarmsGitHubTerraformRole` |
 | Dev Terraform apply | **Not run** |
 | EC2 bootstrap (`install.sh`) | **Not run** |
 | SSL for `api.krishifarms.in` | **Not run** |
