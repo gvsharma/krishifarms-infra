@@ -105,12 +105,30 @@ docs/                   → INDEX, DOCUMENTATION, ARCHITECTURE, CHANGELOG, DECIS
 
 ## CI/CD flows
 
+### Git workflow (mandatory)
+
+**Never push directly to `main`.** All work goes through feature branches and PRs.
+
+```
+feature branch  →  push  →  open PR to main  →  CI runs plan (no apply)
+                                              →  merge PR to main  →  CI runs plan + apply (dev)
+```
+
+| Action | CI behavior |
+|--------|-------------|
+| Push to feature branch | **No CI** (unless you open a PR) |
+| PR targeting `main` | **Plan only** — safe to review |
+| Merge PR → `main` | **Plan + auto-apply** dev stack |
+| Manual workflow dispatch | Plan; optional apply with approval |
+
+Agents and contributors: commit and push to a **feature branch** only. The user opens and merges PRs to `main`.
+
 ### Infra CI (`terraform.yml`)
 
 ```
 PR → main     → terraform plan (dev only, no apply)
-push → main    → terraform plan + apply (dev)
-manual         → plan; apply if input apply=true + development environment approval
+merge → main  → push event → terraform plan + apply (dev)
+manual        → plan; apply if input apply=true + development environment approval
 ```
 
 Uses `environments/dev/ci.tfvars` — **not** `terraform.tfvars`.
@@ -255,7 +273,7 @@ Cursor rule `.cursor/rules/documentation-maintenance.mdc` enforces this.
 | Repo scaffold + modules | Done (branch `feat/initial-infra-implementation`) |
 | Shared EC2 design | Done |
 | CI/CD workflows (Gamya pattern) | Done |
-| Bootstrap apply in AWS | **Not run** — state bucket may not exist yet |
+| Bootstrap apply in AWS | **Done** — S3 `krishifarms-terraform-state`, DynamoDB `terraform-locks`, role `KrishiFarmsGitHubTerraformRole` |
 | Dev Terraform apply | **Not run** |
 | EC2 bootstrap (`install.sh`) | **Not run** |
 | SSL for `api.krishifarms.in` | **Not run** |
@@ -303,20 +321,25 @@ sudo SHARED_EC2=true API_DOMAIN=api.krishifarms.in NGINX_LOCAL_PORT=8081 \
 
 ## Branch and PR context
 
-- **Active feature branch:** `feat/initial-infra-implementation`
-- **Base branch:** `main` (empty / not yet merged)
-- **3 commits:** initial infra → shared EC2 → CI/CD
+**Policy:** Do not push to `main`. Push to feature branches; user raises PR and merges to `main` to trigger apply.
 
-When making changes, prefer small focused commits on a feature branch and open PR to `main`.
+- **Active feature branch:** `feat/initial-infra-implementation`
+- **Base branch:** `main`
+- **Apply trigger:** merge to `main` only (not feature-branch pushes)
+
+When making changes, commit on a feature branch and push that branch. Open a PR to `main` for plan review; merge when ready to deploy dev.
 
 ---
 
 ## CI trigger note
 
-GitHub Actions **does not run** when you only create a branch in the GitHub UI. To trigger workflows:
+GitHub Actions **does not run** when you only create a branch in the GitHub UI.
 
-- **Push** to the branch (including doc-only changes under tracked paths), or
-- Open a **PR targeting `main`**, or
-- Use **Actions → Terraform → Run workflow** manually.
+| What you do | What runs |
+|-------------|-----------|
+| Push to feature branch only | Nothing (no workflow) |
+| Open PR → `main` (Terraform paths) | **Plan** job only |
+| Merge PR → `main` | **Plan + apply** dev |
+| Actions → Run workflow manually | Plan; optional apply |
 
-The `terraform.yml` workflow runs on pushes/PRs that touch `*.tf`, `*.tfvars`, or `.github/workflows/terraform.yml`. Doc-only pushes do not trigger it unless you use manual dispatch or touch those paths.
+The `terraform.yml` workflow runs on PRs/pushes to `main` that touch `*.tf`, `*.tfvars`, or `.github/workflows/terraform.yml`. Doc-only feature-branch pushes do not trigger CI.

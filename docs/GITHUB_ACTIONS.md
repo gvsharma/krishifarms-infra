@@ -16,12 +16,24 @@ Workflow: [`.github/workflows/terraform.yml`](../.github/workflows/terraform.yml
 
 **Prod (`environments/prod`) is not deployed by CI** — manual workflow only.
 
+## Git workflow (required)
+
+**Do not push directly to `main`.** Use feature branches and PRs:
+
+1. Create or use a feature branch (e.g. `feat/my-change`)
+2. Push commits to the feature branch
+3. Open a PR targeting `main` → CI runs **plan only** (review output)
+4. Merge the PR → push to `main` → CI runs **plan + auto-apply** dev
+
+Feature-branch pushes alone do **not** start CI/CD. Apply happens only after merge to `main`.
+
 ## Events
 
 | Event | Action |
 |-------|--------|
+| Push to feature branch | **No workflow** |
 | PR → `main` | Plan only |
-| Push → `main` | Plan + auto-apply dev |
+| Merge → `main` (push event) | Plan + auto-apply dev |
 | Manual + `apply=false` | Plan only |
 | Manual + `apply=true` | Plan + apply dev (requires **development** approval) |
 
@@ -32,8 +44,8 @@ Workflow: [`.github/workflows/terraform.yml`](../.github/workflows/terraform.yml
 3. Create GitHub Environment **`development`** with required reviewers
 4. Update `environments/dev/ci.tfvars` with shared Gamya EC2 `instance_id`, EIP, `vpc_id`
 5. (Optional) Set secret **`KRISHIFARMS_GH_TOKEN`** — PAT with `repo` on `gvsharma/krishifarms-crm` so Terraform syncs deploy vars after apply
-6. Merge PR → verify **Terraform / Plan (dev)** runs
-7. Push to `main` or manual apply → dev stack + backend deploy IAM created
+6. Open PR from feature branch → verify **Terraform / Plan (dev)** runs (no apply)
+7. Merge PR to `main` → dev stack auto-applies (or use manual apply with approval)
 
 ## Backend deploy (krishifarms-crm repo)
 
