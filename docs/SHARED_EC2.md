@@ -34,7 +34,26 @@ vpc_id                   = "vpc-XXXXXXXXX"
 
 Apply KrishiFarms Terraform — it creates **separate S3 buckets, IAM policies, DNS records**. It does **not** create a new EC2.
 
-### 2. Merge IAM instance profile
+### 2. Merge IAM on shared EC2 (dev example)
+
+After `environments/dev` apply, on the Gamya host (`i-0426cdc00ff15bfe9`):
+
+```bash
+# Attach KrishiFarms SG alongside Gamya SG
+aws ec2 modify-instance-attribute --instance-id i-0426cdc00ff15bfe9 \
+  --groups sg-0081b9a1c33093c46 sg-0af8a1e4fd8103036
+
+# Attach deploy-bucket read policy to Gamya EC2 role (one profile per instance)
+aws iam attach-role-policy \
+  --role-name gamya-couture-dev-api-20260609150831962200000001 \
+  --policy-arn arn:aws:iam::085863558134:policy/krishifarms-dev-backend-deploy-read-20260621161623525500000007
+
+# Dev health checks use Docker nginx on :8082 (open on KrishiFarms SG if needed)
+```
+
+Set GitHub Actions on **`gvsharma/krishifarms-backend`** from `terraform output` (see `scripts/sync-backend-deploy-github-config.sh`).
+
+### 3. Merge IAM instance profile (prod pattern)
 
 The EC2 can have **one** instance profile. Attach policies for **both** apps:
 
@@ -54,7 +73,7 @@ aws iam list-attached-role-policies --role-name "${KRISHI_PROFILE#*/}"
 
 **Option B — add Gamya bucket ARNs to KrishiFarms IAM module** (if Gamya needs Krishi role — usually keep Gamya role and add Krishi S3 statements to it).
 
-### 3. Bootstrap KrishiFarms (does not touch Gamya)
+### 4. Bootstrap KrishiFarms (does not touch Gamya)
 
 ```bash
 aws ssm start-session --target i-XXXXXXXXX
@@ -71,14 +90,14 @@ Bootstrap will:
 - Install KrishiFarms under `/opt/krishifarms/` only
 - Bind Docker nginx to **8081**
 
-### 4. SSL for KrishiFarms domain
+### 5. SSL for KrishiFarms domain
 
 ```bash
 sudo API_DOMAIN=api.krishifarms.in ADMIN_EMAIL=you@domain.com \
   bash /opt/krishifarms/scripts/ssl/setup-ssl.sh
 ```
 
-### 5. Start KrishiFarms stack
+### 6. Start KrishiFarms stack
 
 ```bash
 # Configure secrets
@@ -89,7 +108,7 @@ sudo chmod 600 /opt/krishifarms/config/.env
 /opt/krishifarms/scripts/health-check.sh
 ```
 
-### 6. Verify both apps
+### 7. Verify both apps
 
 ```bash
 curl -s http://127.0.0.1:8080/health    # Gamya

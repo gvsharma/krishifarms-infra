@@ -9,7 +9,7 @@
 **Repository:** `gvsharma/krishifarms-infra`  
 **Role:** AWS infrastructure, Docker Compose deployment assets, operational scripts, and GitHub Actions CI for **KrishiFarms CRM**.
 
-**Application repo (separate):** `gvsharma/krishifarms-crm` — FastAPI backend, Alembic, business logic.
+**App repo (separate):** `gvsharma/krishifarms-backend` — FastAPI backend, Alembic, business logic. (Legacy docs may say `krishifarms-crm`; that repo does not exist on GitHub.)
 
 **Reference infra (sibling pattern):** `gvsharma/gamya-couture-infra` — same AWS account, same EC2 host, similar CI/CD model.
 

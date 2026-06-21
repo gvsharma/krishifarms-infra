@@ -23,7 +23,7 @@ health_check_url = "http://127.0.0.1:8082/health"
 
 # Backend deploy: GitHub Actions → S3 → SSM → EC2 (Docker)
 enable_backend_ssm_deploy   = true
-github_backend_repository   = "gvsharma/krishifarms-crm"
+github_backend_repository   = "gvsharma/krishifarms-backend"
 create_github_oidc_provider = false
 
 # Route53 zone for krishifarms.in does not exist yet — re-enable when DNS is ready
