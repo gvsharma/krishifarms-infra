@@ -9,6 +9,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+- `terraform fmt` alignment in `environments/prod/ci.tfvars` (unblocks CI fmt check)
+
 ### Added
 - `docs/INDEX.md` — master documentation index
 - `docs/ARCHITECTURE.md` — full system architecture reference
@@ -17,6 +20,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 - `docs/CHANGELOG.md` — this file
 - `.cursor/rules/documentation-maintenance.mdc` — require doc updates on every change
 - CI trigger documentation in `AGENTS.md` and `README.md`
+
+### Fixed
+- `terraform fmt` alignment in `environments/prod/ci.tfvars` (unblocks CI fmt check)
 
 ### Changed
 - Disable custom domain in dev/qa/prod `ci.tfvars` until Route53 hosted zone exists for `krishifarms.in`
