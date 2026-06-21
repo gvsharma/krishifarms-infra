@@ -290,3 +290,15 @@ sudo SHARED_EC2=true API_DOMAIN=api.krishifarms.in NGINX_LOCAL_PORT=8081 \
 - **3 commits:** initial infra → shared EC2 → CI/CD
 
 When making changes, prefer small focused commits on a feature branch and open PR to `main`.
+
+---
+
+## CI trigger note
+
+GitHub Actions **does not run** when you only create a branch in the GitHub UI. To trigger workflows:
+
+- **Push** to the branch (including doc-only changes under tracked paths), or
+- Open a **PR targeting `main`**, or
+- Use **Actions → Terraform → Run workflow** manually.
+
+The `terraform.yml` workflow runs on pushes/PRs that touch `*.tf`, `*.tfvars`, or `.github/workflows/terraform.yml`. Doc-only pushes do not trigger it unless you use manual dispatch or touch those paths.

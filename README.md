@@ -96,6 +96,8 @@ terraform apply -var-file=ci.tfvars
 
 Or merge to `main` — CI applies dev automatically.
 
+**Note:** Creating a branch in the GitHub UI does not trigger Actions. Push a commit to `main`, open a PR, or run **Actions → Terraform → Run workflow** manually.
+
 ### 4. Bootstrap KrishiFarms on shared Gamya EC2
 
 ```bash
