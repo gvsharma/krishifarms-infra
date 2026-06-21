@@ -26,4 +26,5 @@ enable_backend_ssm_deploy   = true
 github_backend_repository   = "gvsharma/krishifarms-crm"
 create_github_oidc_provider = false
 
-enable_custom_domain = true
+# Route53 zone for krishifarms.in does not exist yet — re-enable when DNS is ready
+enable_custom_domain = false
