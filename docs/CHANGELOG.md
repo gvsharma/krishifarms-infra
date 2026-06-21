@@ -10,6 +10,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Fixed
+- `github_token_configured` local: use ternary instead of `&&` (Terraform 1.9.x evaluates both `&&` operands eagerly; `trimspace(null)` broke plan when `KRISHIFARMS_GH_TOKEN` unset)
 - Skip `github_backend_deploy_config` when `github_token` is null or empty (CI passed `TF_VAR_github_token=""` for unset `KRISHIFARMS_GH_TOKEN`, causing GitHub provider 401 on apply)
 - Terraform workflow only exports `TF_VAR_github_token` when `KRISHIFARMS_GH_TOKEN` secret is non-empty
 - IAM `frontend_deploy` count uses short-circuit ternary for Terraform 1.9.x CI compatibility
