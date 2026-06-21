@@ -87,8 +87,13 @@ resource "aws_iam_role_policy" "backend_deploy" {
   policy      = data.aws_iam_policy_document.backend_deploy[0].json
 }
 
+locals {
+  # Short-circuit before comparing bucket ARN — unknown until apply breaks count on Terraform 1.9.x
+  create_frontend_github_deploy = var.github_backend_repository != "" ? (var.frontend_bucket_arn != "" ? 1 : 0) : 0
+}
+
 data "aws_iam_policy_document" "frontend_deploy" {
-  count = var.frontend_bucket_arn != "" && var.github_backend_repository != "" ? 1 : 0
+  count = local.create_frontend_github_deploy
 
   statement {
     sid    = "SyncFrontend"
@@ -107,7 +112,7 @@ data "aws_iam_policy_document" "frontend_deploy" {
 }
 
 resource "aws_iam_role" "frontend_deploy" {
-  count = var.frontend_bucket_arn != "" && var.github_backend_repository != "" ? 1 : 0
+  count = local.create_frontend_github_deploy
 
   name_prefix        = "${var.name_prefix}-frontend-deploy-"
   assume_role_policy = data.aws_iam_policy_document.backend_deploy_assume[0].json
@@ -118,7 +123,7 @@ resource "aws_iam_role" "frontend_deploy" {
 }
 
 resource "aws_iam_role_policy" "frontend_deploy" {
-  count = var.frontend_bucket_arn != "" && var.github_backend_repository != "" ? 1 : 0
+  count = local.create_frontend_github_deploy
 
   name_prefix = "${var.name_prefix}-frontend-deploy-"
   role        = aws_iam_role.frontend_deploy[0].id
