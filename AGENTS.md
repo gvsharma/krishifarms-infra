@@ -82,7 +82,7 @@ scripts/backup/         → PostgreSQL pg_dump → S3
 scripts/ssl/            → Certbot setup
 .github/workflows/      → terraform.yml (dev CI), terraform-qa/prod (manual)
 examples/               → deploy-backend.yml template for krishifarms-crm repo
-docs/                   → Human + agent runbooks (SHARED_EC2, GITHUB_ACTIONS, RUNBOOK)
+docs/                   → INDEX, DOCUMENTATION, ARCHITECTURE, CHANGELOG, DECISIONS, runbooks
 ```
 
 ---
@@ -209,11 +209,29 @@ terraform plan -var-file=ci.tfvars
 
 | Doc | When to read |
 |-----|--------------|
+| **[docs/INDEX.md](docs/INDEX.md)** | Find any document |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | System design, data flows, modules |
+| **[docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)** | **Required:** what to update on each change |
+| **[docs/CHANGELOG.md](docs/CHANGELOG.md)** | History of changes |
+| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Why architecture choices were made |
 | [docs/SHARED_EC2.md](docs/SHARED_EC2.md) | Any EC2, nginx, or port change |
 | [docs/GITHUB_ACTIONS.md](docs/GITHUB_ACTIONS.md) | CI/CD, OIDC, GitHub vars |
 | [docs/EC2_IMPORT.md](docs/EC2_IMPORT.md) | Adopting / attaching to existing EC2 |
 | [docs/RUNBOOK.md](docs/RUNBOOK.md) | Backups, restore, incidents |
 | [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | File-level map |
+
+---
+
+## Documentation maintenance (agents)
+
+**Every change must update docs in the same commit.** Follow [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md):
+
+1. Append to `docs/CHANGELOG.md`
+2. Update `AGENTS.md` if constants/status/constraints changed
+3. Update relevant runbook or `docs/ARCHITECTURE.md`
+4. Add ADR to `docs/DECISIONS.md` for non-obvious decisions
+
+Cursor rule `.cursor/rules/documentation-maintenance.mdc` enforces this.
 
 ---
 
