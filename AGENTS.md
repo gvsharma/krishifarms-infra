@@ -140,7 +140,7 @@ GitHub secrets/vars on **this repo**:
 | Name | Purpose |
 |------|---------|
 | `AWS_ROLE_ARN` | OIDC role for Terraform (fallback baked in workflow) |
-| `KRISHIFARMS_GH_TOKEN` | Optional PAT to sync deploy config to CRM repo |
+| `KRISHIFARMS_GH_TOKEN` | Optional PAT with `repo` on `gvsharma/krishifarms-backend` — Terraform syncs deploy secrets/vars when set; omit for manual setup |
 
 ### Backend deploy (app repo)
 

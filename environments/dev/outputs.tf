@@ -59,7 +59,7 @@ output "backend_deploy_role_arn" {
 }
 
 output "backend_deploy_github_setup" {
-  description = "GitHub repository variables/secrets for krishifarms-crm deploy workflow."
+  description = "GitHub repository variables/secrets for krishifarms-backend deploy workflow."
   value = var.enable_backend_ssm_deploy ? {
     secret_AWS_BACKEND_DEPLOY_ROLE_ARN = module.ci_backend_deploy[0].deploy_role_arn
     variable_DEPLOY_BUCKET             = module.backend_deploy_artifacts[0].bucket_name

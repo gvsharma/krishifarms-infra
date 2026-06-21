@@ -43,13 +43,13 @@ Feature-branch pushes alone do **not** start CI/CD. Apply happens only after mer
 2. Set GitHub repo variable **`AWS_ROLE_ARN`** = `arn:aws:iam::085863558134:role/KrishiFarmsGitHubTerraformRole`
 3. Create GitHub Environment **`development`** with required reviewers
 4. Update `environments/dev/ci.tfvars` with shared Gamya EC2 `instance_id`, EIP, `vpc_id`
-5. (Optional) Set secret **`KRISHIFARMS_GH_TOKEN`** — PAT with `repo` on `gvsharma/krishifarms-crm` so Terraform syncs deploy vars after apply
+5. (Optional) Set secret **`KRISHIFARMS_GH_TOKEN`** — PAT with `repo` on `gvsharma/krishifarms-backend` so Terraform syncs deploy vars/secrets after apply. If unset, CI skips the GitHub provider module (no 401); copy values from the apply job summary into the backend repo manually or use `scripts/sync-backend-deploy-github-config.sh`.
 6. Open PR from feature branch → verify **Terraform / Plan (dev)** runs (no apply)
 7. Merge PR to `main` → dev stack auto-applies (or use manual apply with approval)
 
-## Backend deploy (krishifarms-crm repo)
+## Backend deploy (krishifarms-backend repo)
 
-After dev apply, Terraform outputs `backend_deploy_github_setup`. Copy to **`gvsharma/krishifarms-crm`** or let Terraform/gh sync set:
+After dev apply, Terraform outputs `backend_deploy_github_setup`. Copy to **`gvsharma/krishifarms-backend`** or let Terraform/gh sync set:
 
 | Setting | Purpose |
 |---------|---------|
@@ -58,6 +58,8 @@ After dev apply, Terraform outputs `backend_deploy_github_setup`. Copy to **`gvs
 | Variable `EC2_INSTANCE_ID` | Shared Gamya EC2 |
 | Variable `EC2_HOST` | Elastic IP |
 | Variable `HEALTH_CHECK_URL` | e.g. `http://127.0.0.1:8082/health` (dev) |
+
+**Without `KRISHIFARMS_GH_TOKEN`:** CI does not pass `TF_VAR_github_token` (empty secret is not forwarded). `module.github_backend_deploy_config` count stays `0`; AWS resources still apply. Set the table above manually on the backend repo or re-run apply after adding the PAT.
 
 Deploy workflow template: [`examples/github-workflows/deploy-backend.yml`](../examples/github-workflows/deploy-backend.yml)
 
