@@ -2,7 +2,8 @@
 
 Production Terraform, Docker Compose, and GitHub Actions for KrishiFarms CRM on AWS (`ap-south-1`).
 
-> **For AI agents (Cursor, Copilot, etc.):** Read **[AGENTS.md](AGENTS.md)** first — it contains full architecture context, AWS account constants, shared EC2 rules, port map, constraints, and safe-edit guidelines.
+> **For AI agents (Cursor, Copilot, etc.):** Read **[AGENTS.md](AGENTS.md)** first, then **[docs/INDEX.md](docs/INDEX.md)**.  
+> **Doc maintenance is mandatory** on every change — see **[docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)**.
 
 | Item | Value |
 |------|-------|
@@ -96,6 +97,8 @@ terraform apply -var-file=ci.tfvars
 
 Or merge to `main` — CI applies dev automatically.
 
+**Note:** Creating a branch in the GitHub UI does not trigger Actions. Push a commit to `main`, open a PR, or run **Actions → Terraform → Run workflow** manually.
+
 ### 4. Bootstrap KrishiFarms on shared Gamya EC2
 
 ```bash
@@ -121,7 +124,12 @@ Copy [examples/github-workflows/deploy-backend.yml](examples/github-workflows/de
 
 | Doc | Audience | Contents |
 |-----|----------|----------|
-| **[AGENTS.md](AGENTS.md)** | AI / agentic IDEs | Full context, constraints, constants, safe edits |
+| **[AGENTS.md](AGENTS.md)** | AI / agentic IDEs | **Start here** — constraints, constants, safe edits |
+| **[docs/INDEX.md](docs/INDEX.md)** | All | Master index of every doc |
+| **[docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)** | Contributors + agents | **Update docs on every change** |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Engineers | Full system design + diagrams |
+| **[docs/CHANGELOG.md](docs/CHANGELOG.md)** | All | Dated change log |
+| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Architects | ADR log (why we chose X) |
 | [docs/SHARED_EC2.md](docs/SHARED_EC2.md) | Operators | Gamya + KrishiFarms coexistence |
 | [docs/GITHUB_ACTIONS.md](docs/GITHUB_ACTIONS.md) | DevOps | CI/CD setup checklist |
 | [docs/EC2_IMPORT.md](docs/EC2_IMPORT.md) | DevOps | Adopt existing EC2 |

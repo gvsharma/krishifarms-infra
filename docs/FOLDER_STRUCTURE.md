@@ -10,7 +10,14 @@ Primary context file for Cursor and other agentic IDEs: constraints, AWS constan
 
 ## `.cursor/rules/`
 
-Cursor-specific rule that points agents to `AGENTS.md` on every session.
+| Rule | Purpose |
+|------|---------|
+| `krishifarms-infra.mdc` | Core constraints (always on) |
+| `documentation-maintenance.mdc` | **Update docs on every change** (always on) |
+
+## `docs/`
+
+See [INDEX.md](../INDEX.md) for the full documentation map.
 
 ## `bootstrap/`
 

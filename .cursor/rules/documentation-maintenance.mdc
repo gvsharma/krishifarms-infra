@@ -1,0 +1,32 @@
+---
+description: Require documentation updates on every infra change (AGENTS.md, CHANGELOG, runbooks)
+alwaysApply: true
+---
+
+# Documentation maintenance (mandatory)
+
+Before completing ANY task in this repo, read `AGENTS.md` and `docs/DOCUMENTATION.md`.
+
+## On every change, you MUST
+
+1. Append a entry to `docs/CHANGELOG.md` under `[Unreleased]`
+2. Update affected technical docs (see table in `docs/DOCUMENTATION.md`)
+3. Update `AGENTS.md` if constants, ports, constraints, or status changed
+4. Add `docs/DECISIONS.md` ADR if making a non-obvious architectural choice
+5. Never skip docs because the change "seems small"
+
+## Quick reference — what to update
+
+| Change type | Minimum docs |
+|-------------|--------------|
+| Terraform module/env | CHANGELOG + ARCHITECTURE + module README |
+| Docker/nginx/ports | CHANGELOG + SHARED_EC2 + AGENTS.md port map |
+| Scripts | CHANGELOG + RUNBOOK |
+| CI/CD | CHANGELOG + GITHUB_ACTIONS + AGENTS.md |
+| AWS constants | CHANGELOG + AGENTS.md + ci.tfvars |
+
+## Doc index
+
+Start at `docs/INDEX.md` for the full map.
+
+Do not mark a task complete until documentation is updated in the same commit.
