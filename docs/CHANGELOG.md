@@ -23,7 +23,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 - CI trigger documentation in `AGENTS.md` and `README.md`
 
 ### Changed
-- Disable custom domain in dev/qa/prod `ci.tfvars` until Route53 hosted zone exists for `krishifarms.in`
+- Point dev CI deploy OIDC at `gvsharma/krishifarms-backend` (actual app repo; `krishifarms-crm` does not exist)
+- Document shared-EC2 post-apply steps in `docs/SHARED_EC2.md` (SG attach, Gamya role policy, bootstrap)
 - Bootstrap applied in AWS (2026-06-21): state bucket, lock table, GitHub OIDC role created
 - Documented mandatory git workflow: feature branch → PR → merge to `main` for CI apply; never push directly to `main`
 - Enhanced `AGENTS.md` as primary agent entry point

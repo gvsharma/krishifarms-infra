@@ -7,7 +7,7 @@ if [[ -z "${GH_TOKEN:-}" ]]; then
   exit 0
 fi
 
-REPO="${GITHUB_BACKEND_REPOSITORY:-gvsharma/krishifarms-crm}"
+REPO="${GITHUB_BACKEND_REPOSITORY:-gvsharma/krishifarms-backend}"
 WORKING_DIR="${TF_WORKING_DIR:-environments/dev}"
 
 if ! command -v gh >/dev/null 2>&1; then
