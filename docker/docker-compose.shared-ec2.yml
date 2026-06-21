@@ -1,0 +1,13 @@
+# Optional memory caps when sharing EC2 with Gamya Couture (prod already binds :8081).
+services:
+  postgres:
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+
+  api:
+    deploy:
+      resources:
+        limits:
+          memory: 768M

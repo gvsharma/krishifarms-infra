@@ -45,8 +45,20 @@ krishifarms-infra/
 │   └── deploy-backend.yml        # Build, test, deploy API
 └── docs/
     ├── FOLDER_STRUCTURE.md
+    ├── SHARED_EC2.md           # Gamya + KrishiFarms on same EC2
     ├── EC2_IMPORT.md
     └── RUNBOOK.md
+```
+
+## Architecture
+
+**Default: shared EC2 with Gamya Couture** (no extra instance cost). KrishiFarms uses port **8081**; Gamya keeps **8080**. See [docs/SHARED_EC2.md](docs/SHARED_EC2.md).
+
+```
+Internet
+   ├─► api.gamyacouture.com  → host nginx → :8080 → Gamya (existing)
+   ├─► api.krishifarms.in    → host nginx → :8081 → Docker (FastAPI + Postgres + Redis)
+   └─► S3 documents/backups ◄── IAM role (merged on shared EC2)
 ```
 
 ## Quick start
@@ -56,18 +68,18 @@ krishifarms-infra/
 cd bootstrap && cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
 
-# 2. Configure prod (existing EC2)
+# 2. Configure prod (same EC2 as Gamya)
 cd environments/prod
 cp terraform.tfvars.example terraform.tfvars
-# Set existing_ec2_instance_id, domain_name, vpc_id
+# Set existing_ec2_instance_id = Gamya EC2 id
 
-terraform init
-terraform plan
-terraform apply
+terraform init && terraform plan && terraform apply
 
-# 3. Bootstrap EC2 host (once per instance)
+# 3. Bootstrap on shared EC2 (port 8081 — does not touch Gamya)
 aws ssm start-session --target <instance-id>
-sudo bash /opt/krishifarms/scripts/bootstrap/install.sh
+sudo SHARED_EC2=true API_DOMAIN=api.krishifarms.in \
+  bash /tmp/krishifarms-infra/scripts/bootstrap/install.sh
+/opt/krishifarms/scripts/compose-up.sh prod
 ```
 
-See [docs/EC2_IMPORT.md](docs/EC2_IMPORT.md) and [docs/RUNBOOK.md](docs/RUNBOOK.md).
+See [docs/SHARED_EC2.md](docs/SHARED_EC2.md), [docs/EC2_IMPORT.md](docs/EC2_IMPORT.md), and [docs/RUNBOOK.md](docs/RUNBOOK.md).

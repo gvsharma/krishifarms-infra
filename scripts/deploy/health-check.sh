@@ -1,7 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
-URL="${1:-http://127.0.0.1:8080/health}"
-curl -sf "${URL}" && echo " OK" || { echo " FAIL"; exit 1; }
+KRISHI_HOME="/opt/krishifarms"
+HEALTH_CHECK_URL="${1:-}"
 
-docker compose -f /opt/krishifarms/app/docker-compose.yml ps
+if [[ -z "${HEALTH_CHECK_URL}" && -f "${KRISHI_HOME}/config/host.env" ]]; then
+  # shellcheck source=/dev/null
+  source "${KRISHI_HOME}/config/host.env"
+fi
+
+HEALTH_CHECK_URL="${HEALTH_CHECK_URL:-http://127.0.0.1:8081/health}"
+
+curl -sf "${HEALTH_CHECK_URL}" && echo " OK" || { echo " FAIL (${HEALTH_CHECK_URL})"; exit 1; }
+
+COMPOSE_PROJECT="${COMPOSE_PROJECT_NAME:-krishifarms}"
+docker compose -p "${COMPOSE_PROJECT}" -f "${KRISHI_HOME}/app/docker-compose.yml" ps

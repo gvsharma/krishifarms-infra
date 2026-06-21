@@ -1,6 +1,6 @@
 # EC2 Import & Adoption Guide
 
-Terraform **does not create EC2** for KrishiFarms CRM. Production reuses an existing instance.
+KrishiFarms uses the **same EC2 as Gamya Couture** by default. See [SHARED_EC2.md](SHARED_EC2.md) for full setup.
 
 ## 1. Discover existing resources
 
@@ -51,17 +51,12 @@ aws ec2 modify-instance-attribute \
   --groups sg-existing1 sg-existing2 "${SG}"
 ```
 
-## 6. Bootstrap host
+## 6. Bootstrap host (shared EC2 — does not affect Gamya)
 
 ```bash
 aws ssm start-session --target i-XXXXXXXXX
-sudo ENVIRONMENT=prod API_DOMAIN=api.krishifarms.in bash /opt/krishifarms/scripts/bootstrap/install.sh
-```
-
-Copy repo assets first if bootstrap runs before git clone on host:
-
-```bash
-scp -r docker scripts ec2-user@<eip>:/tmp/krishifarms-infra/
+sudo SHARED_EC2=true API_DOMAIN=api.krishifarms.in \
+  bash /tmp/krishifarms-infra/scripts/bootstrap/install.sh
 ```
 
 ## 7. SSL
@@ -74,7 +69,6 @@ sudo API_DOMAIN=api.krishifarms.in ADMIN_EMAIL=you@domain.com \
 ## 8. Start stack
 
 ```bash
-cd /opt/krishifarms/app
-cp /path/to/.env ../config/.env
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+/opt/krishifarms/scripts/compose-up.sh prod
+/opt/krishifarms/scripts/health-check.sh
 ```

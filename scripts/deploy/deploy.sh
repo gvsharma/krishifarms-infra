@@ -1,16 +1,25 @@
 #!/bin/bash
-# Deploy new API image via Docker Compose. Invoked by GitHub Actions SSM or manually.
 set -euo pipefail
 
 KRISHI_HOME="/opt/krishifarms"
 ENVIRONMENT="${ENVIRONMENT:-prod}"
 IMAGE_TAG="${1:?usage: deploy.sh <image-tag>}"
 API_IMAGE="${API_IMAGE:-ghcr.io/gvsharma/krishifarms-crm:${IMAGE_TAG}}"
+HEALTH_CHECK_URL="${HEALTH_CHECK_URL:-http://127.0.0.1:8081/health}"
 
-COMPOSE_FILE="${KRISHI_HOME}/app/docker-compose.yml"
-COMPOSE_OVERRIDE="${KRISHI_HOME}/app/docker-compose.${ENVIRONMENT}.yml"
-COMPOSE_ARGS=(-f "${COMPOSE_FILE}")
-[[ -f "${COMPOSE_OVERRIDE}" ]] && COMPOSE_ARGS+=(-f "${COMPOSE_OVERRIDE}")
+if [[ -f "${KRISHI_HOME}/config/host.env" ]]; then
+  # shellcheck source=/dev/null
+  source "${KRISHI_HOME}/config/host.env"
+fi
+
+COMPOSE_PROJECT="${COMPOSE_PROJECT_NAME:-krishifarms}"
+COMPOSE_ARGS=(-p "${COMPOSE_PROJECT}" -f "${KRISHI_HOME}/app/docker-compose.yml" -f "${KRISHI_HOME}/app/docker-compose.${ENVIRONMENT}.yml")
+
+if [[ "${ENVIRONMENT}" == "prod" && "${SHARED_EC2_WITH_GAMYA:-true}" == "true" ]]; then
+  COMPOSE_ARGS+=(-f "${KRISHI_HOME}/app/docker-compose.shared-ec2.yml")
+elif [[ "${ENVIRONMENT}" == "prod" ]]; then
+  COMPOSE_ARGS+=(-f "${KRISHI_HOME}/app/docker-compose.dedicated-ec2.yml")
+fi
 
 cd "${KRISHI_HOME}/app"
 
@@ -25,9 +34,9 @@ docker compose "${COMPOSE_ARGS[@]}" up -d --no-deps api
 echo "Running migrations..."
 docker compose "${COMPOSE_ARGS[@]}" exec -T api alembic upgrade head
 
-echo "Health check..."
+echo "Health check ${HEALTH_CHECK_URL}..."
 for i in {1..30}; do
-  if curl -sf "http://127.0.0.1:8080/health" >/dev/null; then
+  if curl -sf "${HEALTH_CHECK_URL}" >/dev/null; then
     echo "Deploy successful: ${API_IMAGE}"
     exit 0
   fi

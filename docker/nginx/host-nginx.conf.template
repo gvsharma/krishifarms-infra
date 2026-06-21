@@ -1,8 +1,11 @@
-# Host-level Nginx template — TLS termination + proxy to Docker nginx on :8080
-# Place limit_req_zone in http {} context (main nginx.conf) or use include snippet.
+# Host-level Nginx — KrishiFarms ONLY (shared EC2 with Gamya Couture).
+# Do NOT use default_server — Gamya owns the default on :8080 upstream.
+# Install to: /etc/nginx/conf.d/krishifarms.conf
+#
+# Env vars for envsubst: API_DOMAIN, NGINX_UPSTREAM_PORT (default 8081)
 
 upstream krishifarms_docker_nginx {
-    server 127.0.0.1:8080;
+    server 127.0.0.1:${NGINX_UPSTREAM_PORT};
     keepalive 16;
 }
 
@@ -37,6 +40,11 @@ server {
 
     access_log /opt/krishifarms/logs/nginx/access.log;
     error_log  /opt/krishifarms/logs/nginx/error.log warn;
+
+    location /health {
+        access_log off;
+        proxy_pass http://krishifarms_docker_nginx;
+    }
 
     location / {
         proxy_pass http://krishifarms_docker_nginx;

@@ -7,16 +7,15 @@ services:
       resources:
         limits:
           cpus: "1.0"
-          memory: 768M
+          memory: 1024M
 
   postgres:
     deploy:
       resources:
         limits:
           cpus: "1.0"
-          memory: 1536M
+          memory: 2048M
 
   nginx:
-    # Port 8081 — Gamya Couture uses 8080 on the same shared EC2.
     ports:
-      - "127.0.0.1:8081:80"
+      - "127.0.0.1:8080:80"
