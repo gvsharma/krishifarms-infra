@@ -95,9 +95,11 @@ terraform plan -var-file=ci.tfvars
 terraform apply -var-file=ci.tfvars
 ```
 
-Or merge to `main` — CI applies dev automatically.
+Or merge PR to `main` — CI applies dev automatically after merge.
 
-**Note:** Creating a branch in the GitHub UI does not trigger Actions. Push a commit to `main`, open a PR, or run **Actions → Terraform → Run workflow** manually.
+**Git workflow:** Push to feature branches only. Open a PR to `main` for plan review. CI apply runs on merge, not on feature-branch pushes.
+
+**Note:** Creating a branch in the GitHub UI does not trigger Actions. Open a PR to `main` or run **Actions → Terraform → Run workflow** manually.
 
 ### 4. Bootstrap KrishiFarms on shared Gamya EC2
 

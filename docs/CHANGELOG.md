@@ -19,6 +19,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 - CI trigger documentation in `AGENTS.md` and `README.md`
 
 ### Changed
+- Documented mandatory git workflow: feature branch → PR → merge to `main` for CI apply; never push directly to `main`
 - Enhanced `AGENTS.md` as primary agent entry point
 - Populated `environments/dev/ci.tfvars` and `prod/ci.tfvars` with live Gamya EC2 values
 

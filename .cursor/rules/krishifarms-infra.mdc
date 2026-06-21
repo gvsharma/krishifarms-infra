@@ -14,3 +14,4 @@ alwaysApply: true
 5. **AWS:** account `085863558134`, region `ap-south-1`, EC2 `i-0426cdc00ff15bfe9`
 6. **App code** is in `gvsharma/krishifarms-crm`, not this repo
 7. **Secrets:** never commit `terraform.tfvars` or `.env`
+8. **Git:** never push to `main` — push feature branches only; user merges PR to trigger CI apply
