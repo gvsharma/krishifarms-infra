@@ -59,9 +59,11 @@
 | Traffic | Domain (target) | Host nginx → | Backend |
 |---------|-------------------|--------------|---------|
 | Gamya API | `api.gamyacouture.com` | `127.0.0.1:8080` | Spring Boot (existing) |
-| KrishiFarms prod API | `api.krishifarms.in` | `127.0.0.1:8081` | Docker nginx → FastAPI |
-| KrishiFarms dev API | `dev.api.krishifarms.in` | `127.0.0.1:8082` | Docker nginx → FastAPI |
-| KrishiFarms qa API | `qa.api.krishifarms.in` | `127.0.0.1:8083` | Docker nginx → FastAPI |
+| KrishiFarms prod API | `api.krishifarms.in` (when DNS ready) | `127.0.0.1:8081` | Docker nginx → FastAPI |
+| KrishiFarms dev API | `dev.api.krishifarms.in` (when DNS ready) | `127.0.0.1:8082` | Docker nginx → FastAPI |
+| KrishiFarms qa API | `qa.api.krishifarms.in` (when DNS ready) | `127.0.0.1:8083` | Docker nginx → FastAPI |
+
+**CI note:** `enable_custom_domain = false` in all `ci.tfvars` until Route53 hosted zone exists for `krishifarms.in`. Dev access via EC2 IP + port until then.
 
 Host nginx config: `/etc/nginx/conf.d/krishifarms.conf` (KrishiFarms only — do not overwrite Gamya config).
 

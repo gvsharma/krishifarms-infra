@@ -5,3 +5,4 @@ existing_ec2_public_ip   = "REPLACE"
 vpc_id                   = "REPLACE"
 force_destroy_buckets    = true
 log_retention_days       = 7
+enable_custom_domain     = false
