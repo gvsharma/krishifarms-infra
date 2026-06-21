@@ -9,10 +9,10 @@ owner          = "Venkat"
 
 domain_name = "krishifarms.in"
 
-# Shared Gamya EC2 — replace with real values after: aws ec2 describe-instances
-existing_ec2_instance_id = "REPLACE_WITH_GAMYA_EC2_ID"
-existing_ec2_public_ip   = "REPLACE_WITH_GAMYA_EIP"
-vpc_id                   = "REPLACE_WITH_GAMYA_VPC_ID"
+# Shared Gamya EC2 (gamya-couture-dev-api)
+existing_ec2_instance_id = "i-0426cdc00ff15bfe9"
+existing_ec2_public_ip   = "13.232.200.243"
+vpc_id                   = "vpc-0f2fb2f22b1c747e8"
 
 force_destroy_buckets = true
 log_retention_days    = 3

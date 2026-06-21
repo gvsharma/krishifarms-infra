@@ -2,6 +2,16 @@
 
 Every top-level directory and its purpose.
 
+> **AI agents:** Start with [AGENTS.md](../AGENTS.md) for full project context before editing files.
+
+## `AGENTS.md` (repo root)
+
+Primary context file for Cursor and other agentic IDEs: constraints, AWS constants, port map, CI/CD flows, anti-patterns, and safe-edit guidelines.
+
+## `.cursor/rules/`
+
+Cursor-specific rule that points agents to `AGENTS.md` on every session.
+
 ## `bootstrap/`
 
 One-time Terraform stack that creates the remote state S3 bucket and DynamoDB lock table. Run once per AWS account before any environment apply.

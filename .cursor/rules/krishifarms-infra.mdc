@@ -1,0 +1,15 @@
+---
+description: KrishiFarms infra repo context — read AGENTS.md before editing Terraform, Docker, or CI/CD
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+Before making changes in this repository:
+
+1. Read `AGENTS.md` at the repo root for architecture, AWS constants, and hard constraints.
+2. Never create EC2, RDS, ECS, EKS, Aurora, or OpenSearch unless the user explicitly requests it.
+3. KrishiFarms shares EC2 with Gamya Couture: ports 8081 (prod), 8082 (dev), 8083 (qa). Gamya uses 8080.
+4. AWS account `085863558134`, region `ap-south-1`. OIDC provider already exists — use `create_oidc_provider = false`.
+5. Application code lives in `gvsharma/krishifarms-crm`, not this repo.
+6. Dev Terraform is CI-applied via `environments/dev/ci.tfvars`. Do not commit secrets in `terraform.tfvars`.
